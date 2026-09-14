@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Adaptive Weather Agent
 
-## Getting Started
+A Generative UI weather assistant: you ask a question in plain language, Claude picks a tool, the server fetches real weather data, and a purpose-built React widget streams into the conversation — progressively, not skeleton-then-swap.
 
-First, run the development server:
+Tool calling, structured output validation, streaming UI, rate limiting, observability, and a graded eval suite. Full architecture and phase-by-phase plan: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
+## Status
+
+🚧 Under active development. Current state:
+
+- [x] Project scaffold (Next.js 16, TypeScript, Tailwind v4, Vitest)
+- [x] `wmo.ts` — WMO weather code → UI condition mapping
+- [ ] `insight.ts` — deterministic weather insight text
+- [ ] `client.ts` — Open-Meteo geocoding + forecast client
+- [ ] Zod schemas for tool inputs/outputs
+- [ ] Weather tools + chat route
+- [ ] Chat UI + widgets (single city, comparison, hourly chart)
+- [ ] Rate limiting + budget guards
+- [ ] Motion, mobile layout, error fallbacks
+- [ ] Redis caching, Langfuse tracing
+- [ ] `/evals` tool-choice and schema-accuracy suite
+
+## Why these choices
+
+- **AI SDK UI, this project streams via `streamText` + `useChat`, with typed tool parts (`tool-showCurrentWeather`, etc.) driving which widget renders.
+- **Claude Haiku 4.5 by default, Sonnet 5 one env var away.** Tool routing across a handful of well-described tools is an easy classification task; the `/evals` suite is the arbiter — if tool-choice accuracy drops below 95% on the graded dataset, the model escalates to Sonnet.
+- **One tool per widget, and the model never emits a weather number.** Every tool calls a real weather API server-side and returns Zod-validated props; the model only picks the tool and extracts arguments. This removes hallucinated data as a failure mode entirely.
+- **No vector database.** There's no corpus here — weather is live data fetched via tool calls, not retrieved from documents. Adding embeddings/RAG would be decoration, not architecture.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local   # add your ANTHROPIC_API_KEY
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Only `ANTHROPIC_API_KEY` is required to run locally — Upstash Redis/rate-limiting and Langfuse tracing are optional and fall back gracefully when unset.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Purpose |
+|---|---|
+| `pnpm dev` | Start the dev server |
+| `pnpm build` | Production build |
+| `pnpm test` | Run the Vitest suite once |
+| `pnpm test:watch` | Run Vitest in watch mode |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm lint` | ESLint |
+| `pnpm eval` | Run the tool-choice / schema-accuracy eval suite (Phase 3) |
 
-## Learn More
+## Tech stack
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16 (App Router) · TypeScript (strict) · Tailwind CSS v4 · Vercel AI SDK v7 (`@ai-sdk/anthropic`, `@ai-sdk/react`) · Zod v4 · Recharts · Motion · Upstash Redis/Ratelimit · Langfuse · Vitest + Testing Library + Faker.
