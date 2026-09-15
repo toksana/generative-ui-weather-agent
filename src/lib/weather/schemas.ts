@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { FailureReason } from '../types';
+
 /**
  * A resolved place, as returned by the Open-Meteo geocoding API.
  * https://open-meteo.com/en/docs/geocoding-api
@@ -85,3 +87,30 @@ export const showHourlyForecastInputSchema = z.object({
 });
 
 export type ShowHourlyForecastInput = z.infer<typeof showHourlyForecastInputSchema>;
+
+const nearestActionSchema = z.object({
+  label: z.string().trim().min(1).max(60),
+  prompt: z.string().trim().min(1).max(200),
+});
+
+export const explainCapabilityInputSchema = z.object({
+  requested: z.string().trim().min(1).max(200),
+  nearest: z.array(nearestActionSchema).min(1).max(3),
+});
+
+export type ExplainCapabilityInput = z.infer<typeof explainCapabilityInputSchema>;
+
+/**
+ * The one stream contract every weather tool's `execute` yields against.
+ * Every state — including the terminal ones — must be `yield`ed rather than
+ * `return`ed: `@ai-sdk/provider-utils`'s `executeTool` drains a tool's
+ * AsyncIterable with a plain `for await...of` loop and republishes only the
+ * last *yielded* value as the tool's final output, so a bare `return` value
+ * is silently discarded and never reaches the client.
+ */
+export type ToolStream<T> =
+  | { status: 'resolving'; query: string }
+  | { status: 'ambiguous'; query: string; candidates: Location[] }
+  | { status: 'located'; location: Location }
+  | { status: 'ready'; location: Location; data: T }
+  | { status: 'failed'; query: string; reason: FailureReason };

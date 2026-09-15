@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   compareCitiesInputSchema,
   currentConditionsSchema,
+  explainCapabilityInputSchema,
   hourlyForecastSchema,
   locationSchema,
   showCurrentWeatherInputSchema,
@@ -239,6 +240,55 @@ describe('showHourlyForecastInputSchema', () => {
       city: 'London',
       metric: 'temperature',
       hours,
+    });
+
+    // Assert
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('explainCapabilityInputSchema', () => {
+  it('accepts a requested topic with 1-3 nearest-action chips', () => {
+    // Arrange / Act
+    const result = explainCapabilityInputSchema.safeParse({
+      requested: 'weather in Rome in 1990',
+      nearest: [{ label: 'Current weather in Rome', prompt: 'What is the weather in Rome?' }],
+    });
+
+    // Assert
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an empty requested topic', () => {
+    // Arrange / Act
+    const result = explainCapabilityInputSchema.safeParse({
+      requested: '',
+      nearest: [{ label: 'Current weather', prompt: 'What is the weather?' }],
+    });
+
+    // Assert
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects zero nearest-action chips, since a dead end needs a next step', () => {
+    // Arrange / Act
+    const result = explainCapabilityInputSchema.safeParse({
+      requested: 'who won the world cup',
+      nearest: [],
+    });
+
+    // Assert
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects more than 3 nearest-action chips', () => {
+    // Arrange / Act
+    const result = explainCapabilityInputSchema.safeParse({
+      requested: 'who won the world cup',
+      nearest: Array.from({ length: 4 }, (_, index) => ({
+        label: `Option ${index}`,
+        prompt: `Prompt ${index}`,
+      })),
     });
 
     // Assert
