@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Chip } from '@/components/ui/chip';
 import type { ExplainCapabilityInput } from '@/lib/weather/schemas';
 
 interface CapabilityCardProps extends ExplainCapabilityInput {
@@ -16,15 +16,9 @@ export function CapabilityCard({ requested, nearest, onSelectPrompt }: Capabilit
         <p className="text-base text-foreground/80 md:text-lg">{requested}</p>
         <div className="flex flex-wrap gap-2">
           {nearest.map((action) => (
-            <Button
-              key={action.label}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onSelectPrompt?.(action.prompt)}
-            >
+            <Chip key={action.label} type="button" onClick={() => onSelectPrompt?.(action.prompt)}>
               {action.label}
-            </Button>
+            </Chip>
           ))}
         </div>
       </CardContent>

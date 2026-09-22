@@ -16,7 +16,7 @@ Tool calling, structured output validation, streaming UI, rate limiting, observa
 - [x] Chat shell (`weather-chat.tsx`, `message-list.tsx`, `composer.tsx`) + `SingleCityCard` wired end-to-end
 - [x] Remaining widgets: `ComparisonWidget`, `HourlyChartWidget`, `CapabilityCard` — `message-part.tsx` now switches on all four tool parts
 - [ ] `DisambiguationCard` — the `ambiguous` status still renders `AmbiguousNotice`, a plain-text placeholder without clickable chips to re-send a refined query
-- [ ] `badge.tsx` / `chip.tsx` UI primitives — `CapabilityCard` uses `Button` for its chips in the meantime
+- [x] `badge.tsx` / `chip.tsx` UI primitives — `CapabilityCard` chips and `SingleCityCard`'s condition label now use them
 - [ ] Guards — rate limiting, budget counter, request/turn caps (`cache/redis.ts`, `ratelimit.ts`, `budget.ts` not started)
 
 **Phase 2 — Motion, mobile, resilience**

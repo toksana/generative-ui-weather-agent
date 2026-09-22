@@ -1,12 +1,22 @@
+import type { VariantProps } from 'class-variance-authority';
+
+import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather';
 import { localTime } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import type { Location, ToolStream } from '@/lib/weather/schemas';
-import { describeWeatherCode } from '@/lib/weather/wmo';
+import { describeWeatherCode, type WeatherSeverity } from '@/lib/weather/wmo';
 
 import { MetricSkeleton } from './metric-skeleton';
 import { WeatherIcon } from './weather-icon';
+
+const SEVERITY_BADGE_VARIANT: Record<WeatherSeverity, NonNullable<VariantProps<typeof badgeVariants>['variant']>> = {
+  calm: 'default',
+  mild: 'info',
+  notable: 'warning',
+  severe: 'destructive',
+};
 
 function Metric({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
@@ -73,9 +83,7 @@ function SingleCityCardBase({ location, data }: SingleCityCardProps) {
           <span className="text-4xl font-semibold text-foreground">
             {Math.round(data.conditions.temperature)}°
           </span>
-          <span className="rounded-full bg-warning/10 px-2.5 py-1 text-base font-medium text-warning md:text-lg">
-            {condition.label}
-          </span>
+          <Badge variant={SEVERITY_BADGE_VARIANT[condition.severity]}>{condition.label}</Badge>
         </div>
         <p className="text-base text-foreground/80 md:text-lg">{data.insight}</p>
         <dl className="grid grid-cols-3 gap-2 text-base md:text-lg">
