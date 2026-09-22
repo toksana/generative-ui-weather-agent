@@ -13,7 +13,7 @@ export function WeatherChat() {
 
   return (
     <div className="flex h-full w-full max-w-3xl flex-col">
-      <MessageList messages={messages} />
+      <MessageList messages={messages} onSuggestedPrompt={(text) => sendMessage({ text })} />
       <Composer disabled={busy} onSubmit={(text) => sendMessage({ text })} />
     </div>
   );

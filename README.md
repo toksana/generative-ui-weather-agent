@@ -6,18 +6,30 @@ Tool calling, structured output validation, streaming UI, rate limiting, observa
 
 ## Status
 
-🚧 Under active development. Current state:
+🚧 Under active development. Current state (see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full phase-by-phase plan):
+
+**Phase 1 — Working core MVP**
 
 - [x] Project scaffold (Next.js 16, TypeScript, Tailwind v4, Vitest)
-- [x] `wmo.ts` — WMO weather code → UI condition mapping
-- [ ] `insight.ts` — deterministic weather insight text
-- [ ] `client.ts` — Open-Meteo geocoding + forecast client
-- [ ] Zod schemas for tool inputs/outputs
-- [ ] Weather tools + chat route
-- [ ] Chat UI + widgets (single city, comparison, hourly chart)
-- [ ] Rate limiting + budget guards
-- [ ] Motion, mobile layout, error fallbacks
-- [ ] Redis caching, Langfuse tracing
+- [x] Weather service — `wmo.ts`, `insight.ts`, `client.ts`, `schemas.ts`, `merge-as-resolved.ts`
+- [x] All four tools (`showCurrentWeather`, `compareCities`, `showHourlyForecast`, `explainCapability`) + `system-prompt.ts` + `api/chat/route.ts`
+- [x] Chat shell (`weather-chat.tsx`, `message-list.tsx`, `composer.tsx`) + `SingleCityCard` wired end-to-end
+- [x] Remaining widgets: `ComparisonWidget`, `HourlyChartWidget`, `CapabilityCard` — `message-part.tsx` now switches on all four tool parts
+- [ ] `DisambiguationCard` — the `ambiguous` status still renders `AmbiguousNotice`, a plain-text placeholder without clickable chips to re-send a refined query
+- [ ] `badge.tsx` / `chip.tsx` UI primitives — `CapabilityCard` uses `Button` for its chips in the meantime
+- [ ] Guards — rate limiting, budget counter, request/turn caps (`cache/redis.ts`, `ratelimit.ts`, `budget.ts` not started)
+
+**Phase 2 — Motion, mobile, resilience**
+
+- [ ] `motion` install + `layoutId` morph transitions, `animated-number.tsx`
+- [ ] Mobile-first widget layout, `ComparisonWidget` snap-scroll strip
+- [ ] Per-widget error boundaries, dark mode tokens
+- [ ] Seeded prompt chips, empty state
+
+**Phase 3 — Observability, caching, evals**
+
+- [ ] Redis caching (`wx:v1:geo:*`, `wx:v1:fc:*`)
+- [ ] `instrumentation.ts` + Langfuse/OTel tracing
 - [ ] `/evals` tool-choice and schema-accuracy suite
 
 ## Why these choices
