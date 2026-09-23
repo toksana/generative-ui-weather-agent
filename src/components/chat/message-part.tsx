@@ -1,6 +1,6 @@
 import { CapabilityCard } from '@/components/weather/capability-card';
-import { AmbiguousNotice } from '@/components/weather/ambiguous-notice';
 import { ComparisonWidget } from '@/components/weather/comparison-widget';
+import { DisambiguationCard } from '@/components/weather/disambiguation-card';
 import { HourlyChartWidget } from '@/components/weather/hourly-chart-widget';
 import { SingleCityCard } from '@/components/weather/single-city-card';
 import { WeatherFallbackCard } from '@/components/weather/weather-fallback-card';
@@ -37,7 +37,13 @@ export function MessagePart({ part, onSuggestedPrompt }: MessagePartProps) {
         case 'failed':
           return <WeatherFallbackCard {...stream} />;
         case 'ambiguous':
-          return <AmbiguousNotice query={stream.query} candidates={stream.candidates} />;
+          return (
+            <DisambiguationCard
+              query={stream.query}
+              candidates={stream.candidates}
+              onSelectCandidate={onSuggestedPrompt}
+            />
+          );
         default:
           return assertNever(stream);
       }
@@ -52,7 +58,7 @@ export function MessagePart({ part, onSuggestedPrompt }: MessagePartProps) {
           ? (part.input?.cities ?? []).filter((city): city is string => typeof city === 'string' && city.length > 0)
           : part.input.cities;
       const update = part.state === 'output-available' ? part.output : undefined;
-      return <ComparisonWidget cities={cities} update={update} />;
+      return <ComparisonWidget cities={cities} update={update} onSuggestedPrompt={onSuggestedPrompt} />;
     }
 
     case 'tool-showHourlyForecast': {
@@ -75,7 +81,13 @@ export function MessagePart({ part, onSuggestedPrompt }: MessagePartProps) {
         case 'failed':
           return <WeatherFallbackCard {...stream} />;
         case 'ambiguous':
-          return <AmbiguousNotice query={stream.query} candidates={stream.candidates} />;
+          return (
+            <DisambiguationCard
+              query={stream.query}
+              candidates={stream.candidates}
+              onSelectCandidate={onSuggestedPrompt}
+            />
+          );
         default:
           return assertNever(stream);
       }
