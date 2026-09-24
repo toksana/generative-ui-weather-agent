@@ -1,6 +1,5 @@
 import { markFrame } from '@/lib/telemetry';
 import { fetchForecast, geocodeCity } from '@/lib/weather/client';
-import { hasAmbiguousMatch } from '@/lib/weather/disambiguate';
 import { buildInsight } from '@/lib/weather/insight';
 import { currentWeatherStreamSchema, safeToolStreamYield } from '@/lib/weather/schemas';
 import type { CurrentConditions, HourlyForecast, ToolStream } from '@/lib/weather/schemas';
@@ -27,11 +26,6 @@ export async function* resolveCurrentWeather(
   const geocoded = await geocodeCity(city);
   if (!geocoded.ok) {
     yield safe({ status: 'failed', query: city, reason: geocoded.reason });
-    return;
-  }
-
-  if (hasAmbiguousMatch(geocoded.data)) {
-    yield safe({ status: 'ambiguous', query: city, candidates: geocoded.data });
     return;
   }
 

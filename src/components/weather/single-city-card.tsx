@@ -11,7 +11,6 @@ import type { Location, ToolStream } from '@/lib/weather/schemas';
 import { describeWeatherCode, type WeatherSeverity } from '@/lib/weather/wmo';
 
 import { AnimatedNumber } from './animated-number';
-import { DisambiguationCard } from './disambiguation-card';
 import { MetricSkeleton } from './metric-skeleton';
 import { WeatherFallbackCard } from './weather-fallback-card';
 import { WeatherIcon } from './weather-icon';
@@ -117,7 +116,6 @@ interface StreamProps {
 function streamQuery(stream: ToolStream<CurrentWeatherData>): string | undefined {
   switch (stream.status) {
     case 'resolving':
-    case 'ambiguous':
     case 'failed':
       return stream.query;
     case 'located':
@@ -147,14 +145,6 @@ function Stream({ toolCallId, stream, onSuggestedPrompt }: StreamProps) {
                     reason={stream.reason}
                     query={stream.query}
                     onRetry={() => onSuggestedPrompt?.(stream.query)}
-                  />
-                );
-              case 'ambiguous':
-                return (
-                  <DisambiguationCard
-                    query={stream.query}
-                    candidates={stream.candidates}
-                    onSelectCandidate={onSuggestedPrompt}
                   />
                 );
               default:

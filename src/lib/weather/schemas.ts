@@ -110,7 +110,6 @@ export type ExplainCapabilityInput = z.infer<typeof explainCapabilityInputSchema
  */
 export type ToolStream<T> =
   | { status: 'resolving'; query: string }
-  | { status: 'ambiguous'; query: string; candidates: Location[] }
   | { status: 'located'; location: Location }
   | { status: 'ready'; location: Location; data: T }
   | { status: 'failed'; query: string; reason: FailureReason };
@@ -121,7 +120,6 @@ export const failureReasonSchema = z.enum(['not_found', 'invalid_response', 'tim
 export function toolStreamSchema<T extends z.ZodTypeAny>(dataSchema: T) {
   return z.discriminatedUnion('status', [
     z.object({ status: z.literal('resolving'), query: z.string() }),
-    z.object({ status: z.literal('ambiguous'), query: z.string(), candidates: z.array(locationSchema) }),
     z.object({ status: z.literal('located'), location: locationSchema }),
     z.object({ status: z.literal('ready'), location: locationSchema, data: dataSchema }),
     z.object({ status: z.literal('failed'), query: z.string(), reason: failureReasonSchema }),

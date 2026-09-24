@@ -67,11 +67,12 @@ describe('resolveCurrentWeather', () => {
     ]);
   });
 
-  it('ends on ambiguous when the name matches across countries', async () => {
+  it('auto-resolves to the top candidate when the name matches across countries', async () => {
     // Arrange
     const springfieldUS: Location = { ...paris, name: 'Springfield', country: 'United States' };
     const springfieldUK: Location = { ...paris, name: 'Springfield', country: 'United Kingdom' };
     vi.mocked(geocodeCity).mockResolvedValue({ ok: true, data: [springfieldUS, springfieldUK] });
+    vi.mocked(fetchForecast).mockResolvedValue({ ok: true, data: { current: conditions, hourly } });
 
     // Act
     const states = await drain(resolveCurrentWeather('Springfield'));
@@ -79,9 +80,13 @@ describe('resolveCurrentWeather', () => {
     // Assert
     expect(states).toEqual([
       { status: 'resolving', query: 'Springfield' },
-      { status: 'ambiguous', query: 'Springfield', candidates: [springfieldUS, springfieldUK] },
+      { status: 'located', location: springfieldUS },
+      {
+        status: 'ready',
+        location: springfieldUS,
+        data: { conditions, hourly, insight: expect.any(String) },
+      },
     ]);
-    expect(fetchForecast).not.toHaveBeenCalled();
   });
 
   it('ends on failed when geocoding fails', async () => {

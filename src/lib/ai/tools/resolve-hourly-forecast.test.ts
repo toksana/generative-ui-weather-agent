@@ -75,11 +75,12 @@ describe('resolveHourlyForecast', () => {
     ]);
   });
 
-  it('ends on ambiguous when the name matches across countries', async () => {
+  it('auto-resolves to the top candidate when the name matches across countries', async () => {
     // Arrange
     const cambridgeUS: Location = { ...london, name: 'Cambridge', country: 'United States' };
     const cambridgeUK: Location = { ...london, name: 'Cambridge', country: 'United Kingdom' };
     vi.mocked(geocodeCity).mockResolvedValue({ ok: true, data: [cambridgeUS, cambridgeUK] });
+    vi.mocked(fetchForecast).mockResolvedValue({ ok: true, data: { current: conditions, hourly } });
 
     // Act
     const states = await drain(resolveHourlyForecast('Cambridge', 'temperature', 24));
@@ -87,9 +88,14 @@ describe('resolveHourlyForecast', () => {
     // Assert
     expect(states).toEqual([
       { status: 'resolving', query: 'Cambridge' },
-      { status: 'ambiguous', query: 'Cambridge', candidates: [cambridgeUS, cambridgeUK] },
+      { status: 'located', location: cambridgeUS },
+      {
+        status: 'ready',
+        location: cambridgeUS,
+        data: { metric: 'temperature', hourly },
+      },
     ]);
-    expect(fetchForecast).not.toHaveBeenCalled();
+    expect(fetchForecast).toHaveBeenCalledWith(cambridgeUS);
   });
 
   it('ends on failed when geocoding fails', async () => {

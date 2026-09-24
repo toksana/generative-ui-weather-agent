@@ -8,7 +8,6 @@ import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather'
 import { assertNever, cn } from '@/lib/utils';
 import type { ToolStream } from '@/lib/weather/schemas';
 
-import { DisambiguationCard } from './disambiguation-card';
 import { SingleCityCard } from './single-city-card';
 import { WeatherFallbackCard } from './weather-fallback-card';
 import { WidgetErrorBoundary } from './widget-error-boundary';
@@ -51,14 +50,6 @@ function CityResult({
                     reason={result.reason}
                     query={result.query}
                     onRetry={() => onSuggestedPrompt?.(result.query)}
-                  />
-                );
-              case 'ambiguous':
-                return (
-                  <DisambiguationCard
-                    query={result.query}
-                    candidates={result.candidates}
-                    onSelectCandidate={onSuggestedPrompt}
                   />
                 );
               default:
