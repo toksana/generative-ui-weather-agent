@@ -2,11 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import type { ExplainCapabilityInput } from '@/lib/weather/schemas';
 
+import { WidgetErrorBoundary } from './widget-error-boundary';
+
 interface CapabilityCardProps extends ExplainCapabilityInput {
   onSelectPrompt?: (prompt: string) => void;
 }
 
-export function CapabilityCard({ requested, nearest, onSelectPrompt }: CapabilityCardProps) {
+function CapabilityCardBase({ requested, nearest, onSelectPrompt }: CapabilityCardProps) {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -23,5 +25,13 @@ export function CapabilityCard({ requested, nearest, onSelectPrompt }: Capabilit
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export function CapabilityCard(props: CapabilityCardProps) {
+  return (
+    <WidgetErrorBoundary query={props.requested}>
+      <CapabilityCardBase {...props} />
+    </WidgetErrorBoundary>
   );
 }
