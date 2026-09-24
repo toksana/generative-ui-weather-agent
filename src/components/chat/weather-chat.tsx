@@ -3,6 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import { useState } from 'react';
 
+import { ThemeToggle } from '@/components/theme-toggle';
 import type { ChatMessage } from '@/lib/ai/tools';
 import type { GuardReason } from '@/lib/types';
 
@@ -24,6 +25,10 @@ export function WeatherChat() {
 
   return (
     <div className="flex h-full w-full max-w-3xl flex-col">
+      <header className="flex items-center justify-between border-b border-border px-4 py-2">
+        <span className="text-sm font-medium text-muted-foreground">Weather Chat</span>
+        <ThemeToggle />
+      </header>
       <MessageList messages={messages} onSuggestedPrompt={handleSubmit} />
       {guardReason && (
         <div className="px-4 pb-2">
