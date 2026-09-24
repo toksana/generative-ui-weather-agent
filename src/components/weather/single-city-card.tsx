@@ -1,4 +1,5 @@
 import type { VariantProps } from 'class-variance-authority';
+import type { ReactNode } from 'react';
 
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils';
 import type { Location, ToolStream } from '@/lib/weather/schemas';
 import { describeWeatherCode, type WeatherSeverity } from '@/lib/weather/wmo';
 
+import { AnimatedNumber } from './animated-number';
 import { MetricSkeleton } from './metric-skeleton';
 import { WeatherIcon } from './weather-icon';
 
@@ -18,7 +20,7 @@ const SEVERITY_BADGE_VARIANT: Record<WeatherSeverity, NonNullable<VariantProps<t
   severe: 'destructive',
 };
 
-function Metric({ label, value, className }: { label: string; value: string; className?: string }) {
+function Metric({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -80,20 +82,22 @@ function SingleCityCardBase({ location, data }: SingleCityCardProps) {
       <CardContent className="space-y-3">
         <div className="flex items-center gap-3">
           <WeatherIcon icon={condition.icon} className="text-4xl" />
-          <span className="text-4xl font-semibold text-foreground">
-            {Math.round(data.conditions.temperature)}°
-          </span>
+          <AnimatedNumber
+            value={data.conditions.temperature}
+            suffix="°"
+            className="text-4xl font-semibold text-foreground"
+          />
           <Badge variant={SEVERITY_BADGE_VARIANT[condition.severity]}>{condition.label}</Badge>
         </div>
         <p className="text-base text-foreground/80 md:text-lg">{data.insight}</p>
         <dl className="grid grid-cols-3 gap-2 text-base md:text-lg">
-          <Metric label="Feels like" value={`${Math.round(data.conditions.apparentTemperature)}°`} />
+          <Metric label="Feels like" value={<AnimatedNumber value={data.conditions.apparentTemperature} suffix="°" />} />
           <Metric
             label="Humidity"
-            value={`${data.conditions.relativeHumidity}%`}
+            value={<AnimatedNumber value={data.conditions.relativeHumidity} suffix="%" />}
             className="font-medium text-info"
           />
-          <Metric label="Wind" value={`${Math.round(data.conditions.windSpeed)} km/h`} />
+          <Metric label="Wind" value={<AnimatedNumber value={data.conditions.windSpeed} suffix=" km/h" />} />
         </dl>
       </CardContent>
     </Card>
