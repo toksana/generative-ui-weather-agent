@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+
 import { CapabilityCard } from '@/components/weather/capability-card';
 import { ComparisonWidget } from '@/components/weather/comparison-widget';
 import { HourlyChartWidget } from '@/components/weather/hourly-chart-widget';
@@ -13,7 +15,11 @@ interface MessagePartProps {
 export function MessagePart({ part, onSuggestedPrompt }: MessagePartProps) {
   switch (part.type) {
     case 'text':
-      return <p className="whitespace-pre-wrap text-base text-foreground md:text-lg">{part.text}</p>;
+      return (
+        <div className="text-base text-foreground md:text-lg [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5 [&_p:not(:last-child)]:mb-2 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
+          <ReactMarkdown>{part.text}</ReactMarkdown>
+        </div>
+      );
 
     case 'tool-showCurrentWeather': {
       if (part.state === 'input-streaming' || part.state === 'input-available') {
