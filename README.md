@@ -17,7 +17,7 @@ Tool calling, structured output validation, streaming UI, rate limiting, observa
 - [x] Remaining widgets: `ComparisonWidget`, `HourlyChartWidget`, `CapabilityCard` — `message-part.tsx` now switches on all four tool parts
 - [x] `DisambiguationCard` — `ambiguous` status renders `Chip`-based candidates that re-send a refined query
 - [x] `badge.tsx` / `chip.tsx` UI primitives — `CapabilityCard` chips and `SingleCityCard`'s condition label now use them
-- [ ] Guards — rate limiting, budget counter, request/turn caps (`cache/redis.ts`, `ratelimit.ts`, `budget.ts` not started)
+- [x] Guards — `cache/redis.ts`, `ratelimit.ts` (5/day sliding window), `budget.ts` (global daily counter), input/turn caps in `api/chat/route.ts`; all fall back to in-memory when `UPSTASH_*` is unset. `RateLimitNotice` surfaces the 429/400 JSON reason client-side.
 
 **Phase 2 — Motion, mobile, resilience**
 
