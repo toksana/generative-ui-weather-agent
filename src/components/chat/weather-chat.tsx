@@ -25,9 +25,9 @@ export function WeatherChat() {
   }
 
   return (
-    <div className="flex h-full w-full max-w-3xl flex-col">
+    <div className="flex h-dvh w-full max-w-3xl flex-col sm:h-full">
       <header className="flex items-center justify-between border-b border-border px-4 py-2">
-        <span className="text-sm font-medium text-muted-foreground">Weather Chat</span>
+        <span className="text-xl font-bold text-foreground">Weather Chat</span>
         <ThemeToggle />
       </header>
       {messages.length === 0 ? (
