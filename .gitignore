@@ -10,6 +10,11 @@
 !.yarn/releases
 !.yarn/versions
 
+# AI agent skills (fetched via `npx skills add`, not project source)
+/.agents
+/.claude/skills
+skills-lock.json
+
 # testing
 /coverage
 
