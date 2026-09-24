@@ -4,26 +4,26 @@ import { describe, expect, it } from 'vitest';
 import { ComparisonWidget } from './comparison-widget';
 
 describe('ComparisonWidget', () => {
-  it('lays out as a flex-wrap group for fewer than 3 cities', () => {
+  it('lays out as a wrapping grid for fewer than 3 cities', () => {
     // Arrange & Act
     const { container } = render(<ComparisonWidget toolCallId="call-1" cities={['Tokyo', 'Osaka']} />);
 
     // Assert
-    const strip = container.firstElementChild;
-    expect(strip).toHaveClass('flex-wrap');
-    expect(strip).not.toHaveClass('snap-x');
+    const grid = container.firstElementChild;
+    expect(grid).toHaveClass('grid');
+    expect(grid).not.toHaveClass('overflow-x-auto');
   });
 
-  it('becomes a horizontal snap-scroll strip at 3 or more cities', () => {
+  it('stays a wrapping grid (never a horizontal scroll strip) at 3 or more cities', () => {
     // Arrange & Act
     const { container } = render(
       <ComparisonWidget toolCallId="call-1" cities={['Tokyo', 'Osaka', 'Kyoto']} />,
     );
 
     // Assert
-    const strip = container.firstElementChild;
-    expect(strip).toHaveClass('snap-x', 'snap-mandatory', 'overflow-x-auto');
-    expect(strip).not.toHaveClass('flex-wrap');
+    const grid = container.firstElementChild;
+    expect(grid).toHaveClass('grid');
+    expect(grid).not.toHaveClass('overflow-x-auto', 'snap-x');
   });
 
   it('renders a skeleton frame per city before any update arrives', () => {

@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import type { ComparedCityUpdate } from '@/lib/ai/tools/compare-cities';
 import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather';
-import { assertNever, cn } from '@/lib/utils';
+import { assertNever } from '@/lib/utils';
 import type { ToolStream } from '@/lib/weather/schemas';
 
 import { SingleCityCard } from './single-city-card';
@@ -79,19 +79,10 @@ export function ComparisonWidget({ toolCallId, cities, update, onSuggestedPrompt
     setResults((prev) => ({ ...prev, [update.city]: update.result }));
   }
 
-  const strip = cities.length >= 3;
-
   return (
-    <div
-      className={cn(
-        'flex w-full gap-3',
-        strip ? 'snap-x snap-mandatory overflow-x-auto scroll-px-4 pb-2' : 'max-w-3xl flex-wrap',
-      )}
-    >
+    <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
       {cities.map((city) => (
-        <div key={city} className={cn(strip && 'w-[85vw] max-w-[22rem] shrink-0 snap-start')}>
-          <CityResult toolCallId={toolCallId} city={city} result={results[city]} onSuggestedPrompt={onSuggestedPrompt} />
-        </div>
+        <CityResult key={city} toolCallId={toolCallId} city={city} result={results[city]} onSuggestedPrompt={onSuggestedPrompt} />
       ))}
     </div>
   );
