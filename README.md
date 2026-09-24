@@ -28,9 +28,9 @@ Tool calling, structured output validation, streaming UI, rate limiting, observa
 
 **Phase 3 — Observability, caching, evals**
 
-- [ ] Redis caching (`wx:v1:geo:*`, `wx:v1:fc:*`)
-- [ ] `instrumentation.ts` + Langfuse/OTel tracing
-- [ ] `/evals` tool-choice and schema-accuracy suite
+- [x] Redis caching (`wx:v1:geo:*`, `wx:v1:fc:*`) — `cache/weather-cache.ts`, cache-aside in `weather/client.ts`, falls back to in-memory when Upstash is unset
+- [x] `instrumentation.ts` + Langfuse/OTel tracing — one trace per turn, grouped into a session per conversation, with `ttft`/`first_frame` events; no-op when `LANGFUSE_*` is unset
+- [x] `/evals` tool-choice and schema-accuracy suite — 25 cases across five intent regions, graded against both models; `pnpm eval`
 
 ## Why these choices
 
@@ -59,7 +59,7 @@ Open [http://localhost:3000](http://localhost:3000). Only `ANTHROPIC_API_KEY` is
 | `pnpm test:watch` | Run Vitest in watch mode |
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm lint` | ESLint |
-| `pnpm eval` | Run the tool-choice / schema-accuracy eval suite (Phase 3) |
+| `pnpm eval` | Run the tool-choice / schema-accuracy eval suite against Haiku and Sonnet |
 
 ## Tech stack
 
