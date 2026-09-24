@@ -1,3 +1,4 @@
+import { markFrame } from '@/lib/telemetry';
 import { fetchForecast, geocodeCity } from '@/lib/weather/client';
 import { hasAmbiguousMatch } from '@/lib/weather/disambiguate';
 import { hourlyForecastStreamSchema, safeToolStreamYield } from '@/lib/weather/schemas';
@@ -32,6 +33,7 @@ export async function* resolveHourlyForecast(
   }
 
   const [location] = geocoded.data;
+  markFrame('first_frame');
   yield safe({ status: 'located', location });
 
   const forecast = await fetchForecast(location);
