@@ -16,6 +16,8 @@
     "@ai-sdk/anthropic": "^4.0.53",
     "@ai-sdk/react": "^4.0.102",
     "@base-ui/react": "^1.8.0",
+    "@langfuse/tracing": "^5.11.1",
+    "@opentelemetry/api": "^1.9.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.4",
     "ai": "^7.0.99",

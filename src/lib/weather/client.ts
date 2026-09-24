@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { CACHE_TTL_SECONDS, forecastCacheKey, geoCacheKey, getCached, setCached } from '../cache/weather-cache';
+import { recordCacheResult } from '../telemetry';
 import type { Result } from '../types';
 import {
   currentConditionsSchema,
@@ -115,6 +117,11 @@ async function fetchJson(url: string, revalidateSeconds: number): Promise<Result
  * disambiguation concern, not a client-layer failure.
  */
 export async function geocodeCity(query: string): Promise<Result<Location[]>> {
+  const cacheKey = geoCacheKey(query);
+  const cached = await getCached<Location[]>(cacheKey);
+  recordCacheResult('geo', cached !== null);
+  if (cached !== null) return { ok: true, data: cached };
+
   const url = new URL('/v1/search', geocodingBaseUrl());
   url.searchParams.set('name', query);
   url.searchParams.set('count', String(GEOCODING_RESULT_COUNT));
@@ -132,6 +139,7 @@ export async function geocodeCity(query: string): Promise<Result<Location[]>> {
   const validated = z.array(locationSchema).safeParse(results.map(toLocation));
   if (!validated.success) return { ok: false, reason: 'invalid_response' };
 
+  await setCached(cacheKey, validated.data, CACHE_TTL_SECONDS.geo);
   return { ok: true, data: validated.data };
 }
 
@@ -142,6 +150,11 @@ export async function geocodeCity(query: string): Promise<Result<Location[]>> {
 export async function fetchForecast(
   location: Pick<Location, 'latitude' | 'longitude'>,
 ): Promise<Result<{ current: CurrentConditions; hourly: HourlyForecast }>> {
+  const cacheKey = forecastCacheKey(location.latitude, location.longitude);
+  const cached = await getCached<{ current: CurrentConditions; hourly: HourlyForecast }>(cacheKey);
+  recordCacheResult('forecast', cached !== null);
+  if (cached !== null) return { ok: true, data: cached };
+
   const url = new URL('/v1/forecast', forecastBaseUrl());
   url.searchParams.set('latitude', String(location.latitude));
   url.searchParams.set('longitude', String(location.longitude));
@@ -179,8 +192,7 @@ export async function fetchForecast(
     return { ok: false, reason: 'invalid_response' };
   }
 
-  return {
-    ok: true,
-    data: { current: validatedCurrent.data, hourly: validatedHourly.data },
-  };
+  const data = { current: validatedCurrent.data, hourly: validatedHourly.data };
+  await setCached(cacheKey, data, CACHE_TTL_SECONDS.forecast);
+  return { ok: true, data };
 }
