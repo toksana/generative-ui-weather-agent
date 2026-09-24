@@ -10,3 +10,6 @@ export type FailureReason = 'not_found' | 'invalid_response' | 'timeout' | 'upst
  * of wrapping every call in try/catch.
  */
 export type Result<T> = { ok: true; data: T } | { ok: false; reason: FailureReason };
+
+/** Why the chat route rejected a request before calling the model. */
+export type GuardReason = 'input_too_long' | 'too_many_turns' | 'rate_limited' | 'budget_exceeded';
