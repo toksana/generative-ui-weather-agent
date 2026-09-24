@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import { partKey } from '@/lib/chat/part-key';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/lib/ai/tools';
@@ -9,9 +11,29 @@ interface MessageListProps {
   onSuggestedPrompt: (prompt: string) => void;
 }
 
+const NEAR_BOTTOM_THRESHOLD_PX = 120;
+
 export function MessageList({ messages, onSuggestedPrompt }: MessageListProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distanceFromBottom <= NEAR_BOTTOM_THRESHOLD_PX) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages]);
+
   return (
-    <div role="log" aria-live="polite" className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-6">
+    <div
+      ref={containerRef}
+      role="log"
+      aria-live="polite"
+      className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-6"
+    >
       {messages.map((message) => (
         <div key={message.id} className={cn('flex', message.role === 'user' && 'justify-end')}>
           <div className="flex max-w-full flex-col gap-2">
@@ -21,6 +43,7 @@ export function MessageList({ messages, onSuggestedPrompt }: MessageListProps) {
           </div>
         </div>
       ))}
+      <div ref={bottomRef} />
     </div>
   );
 }
