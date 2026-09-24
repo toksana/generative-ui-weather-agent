@@ -10,6 +10,7 @@ import type { GuardReason } from '@/lib/types';
 import { Composer } from './composer';
 import { MessageList } from './message-list';
 import { parseGuardReason, RateLimitNotice } from './rate-limit-notice';
+import { SuggestedPrompts } from './suggested-prompts';
 
 export function WeatherChat() {
   const [guardReason, setGuardReason] = useState<GuardReason | null>(null);
@@ -29,7 +30,17 @@ export function WeatherChat() {
         <span className="text-sm font-medium text-muted-foreground">Weather Chat</span>
         <ThemeToggle />
       </header>
-      <MessageList messages={messages} onSuggestedPrompt={handleSubmit} />
+      {messages.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
+          <p className="max-w-sm text-base text-muted-foreground md:text-lg">
+            Ask about current weather in one city, compare a few, get an hourly forecast, or ask something out of
+            scope to see what this assistant can&apos;t do.
+          </p>
+          <SuggestedPrompts onSelectPrompt={handleSubmit} />
+        </div>
+      ) : (
+        <MessageList messages={messages} onSuggestedPrompt={handleSubmit} />
+      )}
       {guardReason && (
         <div className="px-4 pb-2">
           <RateLimitNotice reason={guardReason} />
