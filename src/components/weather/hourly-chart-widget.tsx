@@ -1,12 +1,17 @@
 'use client';
 
+import { AnimatePresence, motion } from 'motion/react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { HourlyForecastData } from '@/lib/ai/tools/resolve-hourly-forecast';
+import { assertNever } from '@/lib/utils';
 import type { Location, ToolStream } from '@/lib/weather/schemas';
 
+import { DisambiguationCard } from './disambiguation-card';
 import { MetricSkeleton } from './metric-skeleton';
+import { WeatherFallbackCard } from './weather-fallback-card';
+import { WidgetErrorBoundary } from './widget-error-boundary';
 
 interface FrameProps {
   city?: string;
@@ -97,4 +102,63 @@ function HourlyChartWidgetBase({ location, data }: HourlyChartWidgetProps) {
   );
 }
 
-export const HourlyChartWidget = Object.assign(HourlyChartWidgetBase, { Frame });
+interface StreamProps {
+  toolCallId: string;
+  stream: ToolStream<HourlyForecastData>;
+  onSuggestedPrompt?: (prompt: string) => void;
+}
+
+function streamQuery(stream: ToolStream<HourlyForecastData>): string | undefined {
+  switch (stream.status) {
+    case 'resolving':
+    case 'ambiguous':
+    case 'failed':
+      return stream.query;
+    case 'located':
+    case 'ready':
+      return stream.location.name;
+    default:
+      return assertNever(stream);
+  }
+}
+
+function Stream({ toolCallId, stream, onSuggestedPrompt }: StreamProps) {
+  return (
+    <WidgetErrorBoundary query={streamQuery(stream)}>
+      <AnimatePresence mode="popLayout">
+        <motion.div key={stream.status} layout layoutId={`hourly-chart-${toolCallId}`}>
+          {(() => {
+            switch (stream.status) {
+              case 'resolving':
+                return <Frame city={stream.query} />;
+              case 'located':
+                return <Frame location={stream.location} />;
+              case 'ready':
+                return <HourlyChartWidgetBase {...stream} />;
+              case 'failed':
+                return (
+                  <WeatherFallbackCard
+                    reason={stream.reason}
+                    query={stream.query}
+                    onRetry={() => onSuggestedPrompt?.(stream.query)}
+                  />
+                );
+              case 'ambiguous':
+                return (
+                  <DisambiguationCard
+                    query={stream.query}
+                    candidates={stream.candidates}
+                    onSelectCandidate={onSuggestedPrompt}
+                  />
+                );
+              default:
+                return assertNever(stream);
+            }
+          })()}
+        </motion.div>
+      </AnimatePresence>
+    </WidgetErrorBoundary>
+  );
+}
+
+export const HourlyChartWidget = Object.assign(HourlyChartWidgetBase, { Frame, Stream });

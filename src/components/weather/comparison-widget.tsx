@@ -1,49 +1,74 @@
 'use client';
 
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 
 import type { ComparedCityUpdate } from '@/lib/ai/tools/compare-cities';
 import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather';
-import { assertNever } from '@/lib/utils';
+import { assertNever, cn } from '@/lib/utils';
 import type { ToolStream } from '@/lib/weather/schemas';
 
 import { DisambiguationCard } from './disambiguation-card';
 import { SingleCityCard } from './single-city-card';
 import { WeatherFallbackCard } from './weather-fallback-card';
+import { WidgetErrorBoundary } from './widget-error-boundary';
 
 interface ComparisonWidgetProps {
+  toolCallId: string;
   cities: string[];
   update?: ComparedCityUpdate;
   onSuggestedPrompt?: (prompt: string) => void;
 }
 
 function CityResult({
+  toolCallId,
   city,
   result,
   onSuggestedPrompt,
 }: {
+  toolCallId: string;
   city: string;
   result: ToolStream<CurrentWeatherData> | undefined;
   onSuggestedPrompt?: (prompt: string) => void;
 }) {
-  if (!result) return <SingleCityCard.Frame city={city} />;
+  return (
+    <WidgetErrorBoundary query={city}>
+      <AnimatePresence mode="popLayout">
+        <motion.div key={result?.status ?? 'pending'} layout layoutId={`weather-card-${toolCallId}-${city}`}>
+          {(() => {
+            if (!result) return <SingleCityCard.Frame city={city} />;
 
-  switch (result.status) {
-    case 'resolving':
-      return <SingleCityCard.Frame city={result.query} />;
-    case 'located':
-      return <SingleCityCard.Frame location={result.location} pending />;
-    case 'ready':
-      return <SingleCityCard {...result} />;
-    case 'failed':
-      return <WeatherFallbackCard reason={result.reason} query={result.query} />;
-    case 'ambiguous':
-      return (
-        <DisambiguationCard query={result.query} candidates={result.candidates} onSelectCandidate={onSuggestedPrompt} />
-      );
-    default:
-      return assertNever(result);
-  }
+            switch (result.status) {
+              case 'resolving':
+                return <SingleCityCard.Frame city={result.query} />;
+              case 'located':
+                return <SingleCityCard.Frame location={result.location} pending />;
+              case 'ready':
+                return <SingleCityCard {...result} />;
+              case 'failed':
+                return (
+                  <WeatherFallbackCard
+                    reason={result.reason}
+                    query={result.query}
+                    onRetry={() => onSuggestedPrompt?.(result.query)}
+                  />
+                );
+              case 'ambiguous':
+                return (
+                  <DisambiguationCard
+                    query={result.query}
+                    candidates={result.candidates}
+                    onSelectCandidate={onSuggestedPrompt}
+                  />
+                );
+              default:
+                return assertNever(result);
+            }
+          })()}
+        </motion.div>
+      </AnimatePresence>
+    </WidgetErrorBoundary>
+  );
 }
 
 /**
@@ -54,7 +79,7 @@ function CityResult({
  * a changing prop) rather than in an effect, since an effect's extra commit
  * isn't needed here and its setState would run one render late.
  */
-export function ComparisonWidget({ cities, update, onSuggestedPrompt }: ComparisonWidgetProps) {
+export function ComparisonWidget({ toolCallId, cities, update, onSuggestedPrompt }: ComparisonWidgetProps) {
   const [results, setResults] = useState<Record<string, ToolStream<CurrentWeatherData>>>({});
   const [seen, setSeen] = useState<ComparedCityUpdate | undefined>(undefined);
 
@@ -63,10 +88,19 @@ export function ComparisonWidget({ cities, update, onSuggestedPrompt }: Comparis
     setResults((prev) => ({ ...prev, [update.city]: update.result }));
   }
 
+  const strip = cities.length >= 3;
+
   return (
-    <div className="flex w-full max-w-3xl flex-wrap gap-3">
+    <div
+      className={cn(
+        'flex w-full gap-3',
+        strip ? 'snap-x snap-mandatory overflow-x-auto scroll-px-4 pb-2' : 'max-w-3xl flex-wrap',
+      )}
+    >
       {cities.map((city) => (
-        <CityResult key={city} city={city} result={results[city]} onSuggestedPrompt={onSuggestedPrompt} />
+        <div key={city} className={cn(strip && 'w-[85vw] max-w-[22rem] shrink-0 snap-start')}>
+          <CityResult toolCallId={toolCallId} city={city} result={results[city]} onSuggestedPrompt={onSuggestedPrompt} />
+        </div>
       ))}
     </div>
   );

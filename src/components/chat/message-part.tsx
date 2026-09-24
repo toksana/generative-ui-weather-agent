@@ -1,11 +1,9 @@
 import { CapabilityCard } from '@/components/weather/capability-card';
 import { ComparisonWidget } from '@/components/weather/comparison-widget';
-import { DisambiguationCard } from '@/components/weather/disambiguation-card';
 import { HourlyChartWidget } from '@/components/weather/hourly-chart-widget';
 import { SingleCityCard } from '@/components/weather/single-city-card';
 import { WeatherFallbackCard } from '@/components/weather/weather-fallback-card';
 import type { MessagePart as MessagePartType } from '@/lib/chat/part-key';
-import { assertNever } from '@/lib/utils';
 
 interface MessagePartProps {
   part: MessagePartType;
@@ -26,27 +24,9 @@ export function MessagePart({ part, onSuggestedPrompt }: MessagePartProps) {
       }
       if (part.state !== 'output-available') return null;
 
-      const stream = part.output;
-      switch (stream.status) {
-        case 'resolving':
-          return <SingleCityCard.Frame city={stream.query} />;
-        case 'located':
-          return <SingleCityCard.Frame location={stream.location} pending />;
-        case 'ready':
-          return <SingleCityCard {...stream} />;
-        case 'failed':
-          return <WeatherFallbackCard {...stream} />;
-        case 'ambiguous':
-          return (
-            <DisambiguationCard
-              query={stream.query}
-              candidates={stream.candidates}
-              onSelectCandidate={onSuggestedPrompt}
-            />
-          );
-        default:
-          return assertNever(stream);
-      }
+      return (
+        <SingleCityCard.Stream toolCallId={part.toolCallId} stream={part.output} onSuggestedPrompt={onSuggestedPrompt} />
+      );
     }
 
     case 'tool-compareCities': {
@@ -58,7 +38,14 @@ export function MessagePart({ part, onSuggestedPrompt }: MessagePartProps) {
           ? (part.input?.cities ?? []).filter((city): city is string => typeof city === 'string' && city.length > 0)
           : part.input.cities;
       const update = part.state === 'output-available' ? part.output : undefined;
-      return <ComparisonWidget cities={cities} update={update} onSuggestedPrompt={onSuggestedPrompt} />;
+      return (
+        <ComparisonWidget
+          toolCallId={part.toolCallId}
+          cities={cities}
+          update={update}
+          onSuggestedPrompt={onSuggestedPrompt}
+        />
+      );
     }
 
     case 'tool-showHourlyForecast': {
@@ -70,27 +57,13 @@ export function MessagePart({ part, onSuggestedPrompt }: MessagePartProps) {
       }
       if (part.state !== 'output-available') return null;
 
-      const stream = part.output;
-      switch (stream.status) {
-        case 'resolving':
-          return <HourlyChartWidget.Frame city={stream.query} />;
-        case 'located':
-          return <HourlyChartWidget.Frame location={stream.location} />;
-        case 'ready':
-          return <HourlyChartWidget {...stream} />;
-        case 'failed':
-          return <WeatherFallbackCard {...stream} />;
-        case 'ambiguous':
-          return (
-            <DisambiguationCard
-              query={stream.query}
-              candidates={stream.candidates}
-              onSelectCandidate={onSuggestedPrompt}
-            />
-          );
-        default:
-          return assertNever(stream);
-      }
+      return (
+        <HourlyChartWidget.Stream
+          toolCallId={part.toolCallId}
+          stream={part.output}
+          onSuggestedPrompt={onSuggestedPrompt}
+        />
+      );
     }
 
     case 'tool-explainCapability': {

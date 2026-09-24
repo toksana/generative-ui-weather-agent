@@ -1,17 +1,21 @@
 import type { VariantProps } from 'class-variance-authority';
+import { AnimatePresence, motion } from 'motion/react';
 import type { ReactNode } from 'react';
 
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather';
 import { localTime } from '@/lib/time';
-import { cn } from '@/lib/utils';
+import { assertNever, cn } from '@/lib/utils';
 import type { Location, ToolStream } from '@/lib/weather/schemas';
 import { describeWeatherCode, type WeatherSeverity } from '@/lib/weather/wmo';
 
 import { AnimatedNumber } from './animated-number';
+import { DisambiguationCard } from './disambiguation-card';
 import { MetricSkeleton } from './metric-skeleton';
+import { WeatherFallbackCard } from './weather-fallback-card';
 import { WeatherIcon } from './weather-icon';
+import { WidgetErrorBoundary } from './widget-error-boundary';
 
 const SEVERITY_BADGE_VARIANT: Record<WeatherSeverity, NonNullable<VariantProps<typeof badgeVariants>['variant']>> = {
   calm: 'default',
@@ -104,4 +108,63 @@ function SingleCityCardBase({ location, data }: SingleCityCardProps) {
   );
 }
 
-export const SingleCityCard = Object.assign(SingleCityCardBase, { Frame });
+interface StreamProps {
+  toolCallId: string;
+  stream: ToolStream<CurrentWeatherData>;
+  onSuggestedPrompt?: (prompt: string) => void;
+}
+
+function streamQuery(stream: ToolStream<CurrentWeatherData>): string | undefined {
+  switch (stream.status) {
+    case 'resolving':
+    case 'ambiguous':
+    case 'failed':
+      return stream.query;
+    case 'located':
+    case 'ready':
+      return stream.location.name;
+    default:
+      return assertNever(stream);
+  }
+}
+
+function Stream({ toolCallId, stream, onSuggestedPrompt }: StreamProps) {
+  return (
+    <WidgetErrorBoundary query={streamQuery(stream)}>
+      <AnimatePresence mode="popLayout">
+        <motion.div key={stream.status} layout layoutId={`weather-card-${toolCallId}`}>
+          {(() => {
+            switch (stream.status) {
+              case 'resolving':
+                return <Frame city={stream.query} />;
+              case 'located':
+                return <Frame location={stream.location} pending />;
+              case 'ready':
+                return <SingleCityCardBase {...stream} />;
+              case 'failed':
+                return (
+                  <WeatherFallbackCard
+                    reason={stream.reason}
+                    query={stream.query}
+                    onRetry={() => onSuggestedPrompt?.(stream.query)}
+                  />
+                );
+              case 'ambiguous':
+                return (
+                  <DisambiguationCard
+                    query={stream.query}
+                    candidates={stream.candidates}
+                    onSelectCandidate={onSuggestedPrompt}
+                  />
+                );
+              default:
+                return assertNever(stream);
+            }
+          })()}
+        </motion.div>
+      </AnimatePresence>
+    </WidgetErrorBoundary>
+  );
+}
+
+export const SingleCityCard = Object.assign(SingleCityCardBase, { Frame, Stream });
