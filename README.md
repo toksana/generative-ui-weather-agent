@@ -21,10 +21,10 @@ Tool calling, structured output validation, streaming UI, rate limiting, observa
 
 **Phase 2 — Motion, mobile, resilience**
 
-- [ ] `motion` install + `layoutId` morph transitions, `animated-number.tsx`
-- [ ] Mobile-first widget layout, `ComparisonWidget` snap-scroll strip
-- [ ] Per-widget error boundaries, dark mode tokens
-- [ ] Seeded prompt chips, empty state
+- [x] `motion` install + `layoutId` morph transitions — `SingleCityCard.Stream` / `HourlyChartWidget.Stream` keep one component mounted across `resolving → located → ready` so `AnimatePresence` can morph instead of swap; `animated-number.tsx` drives temperature/humidity/wind with a spring and honors `prefers-reduced-motion` via an app-wide `MotionConfig`
+- [x] Mobile-first widget layout — `ComparisonWidget` becomes a horizontal snap-scroll strip at 3+ cities; `MessageList` auto-scrolls to follow streaming output while the viewer is near the bottom
+- [x] Per-widget error boundaries, dark mode tokens — `WidgetErrorBoundary` self-wraps every widget so one bad card can't blank its siblings; every `ToolStream` yield is Zod-`safeParse`d before reaching the client; `WeatherFallbackCard` gained a "Try again" retry chip; `ThemeToggle` + a pre-paint inline script activate the `.dark` token layer that was already built into `globals.css`
+- [x] Seeded prompt chips, empty state — `SuggestedPrompts` (one chip per intent class) renders alongside scope-explaining copy when there are no messages yet
 
 **Phase 3 — Observability, caching, evals**
 
