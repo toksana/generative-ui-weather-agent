@@ -4,9 +4,11 @@ import { describe, expect, it } from 'vitest';
 import {
   compareCitiesInputSchema,
   currentConditionsSchema,
+  currentWeatherStreamSchema,
   explainCapabilityInputSchema,
   hourlyForecastSchema,
   locationSchema,
+  safeToolStreamYield,
   showCurrentWeatherInputSchema,
   showHourlyForecastInputSchema,
 } from './schemas';
@@ -244,6 +246,62 @@ describe('showHourlyForecastInputSchema', () => {
 
     // Assert
     expect(result.success).toBe(false);
+  });
+});
+
+describe('currentWeatherStreamSchema', () => {
+  it('accepts a well-formed ready state', () => {
+    // Arrange
+    const value = {
+      status: 'ready',
+      location: validLocation(),
+      data: { conditions: validCurrentConditions(), hourly: validHourlyForecast(), insight: 'Feels colder.' },
+    };
+
+    // Act
+    const result = currentWeatherStreamSchema.safeParse(value);
+
+    // Assert
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a ready state with malformed data', () => {
+    // Arrange
+    const value = {
+      status: 'ready',
+      location: validLocation(),
+      data: { conditions: { ...validCurrentConditions(), relativeHumidity: 200 }, hourly: validHourlyForecast(), insight: 'x' },
+    };
+
+    // Act
+    const result = currentWeatherStreamSchema.safeParse(value);
+
+    // Assert
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('safeToolStreamYield', () => {
+  it('passes through a value that matches the schema', () => {
+    // Arrange
+    const value = { status: 'located' as const, location: validLocation() };
+
+    // Act
+    const result = safeToolStreamYield(currentWeatherStreamSchema, value, 'Tokyo');
+
+    // Assert
+    expect(result).toEqual(value);
+  });
+
+  it('degrades a malformed value to failed/invalid_response instead of forwarding it', () => {
+    // Arrange
+    const malformed = { status: 'located' as const, location: { ...validLocation(), latitude: 999 } };
+
+    // Act
+    const result = safeToolStreamYield(currentWeatherStreamSchema, malformed, 'Tokyo');
+
+    // Assert
+    expect(result).toEqual({ status: 'failed', query: 'Tokyo', reason: 'invalid_response' });
   });
 });
 

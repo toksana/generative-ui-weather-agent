@@ -1,6 +1,7 @@
 import { fetchForecast, geocodeCity } from '@/lib/weather/client';
 import { hasAmbiguousMatch } from '@/lib/weather/disambiguate';
 import { buildInsight } from '@/lib/weather/insight';
+import { currentWeatherStreamSchema, safeToolStreamYield } from '@/lib/weather/schemas';
 import type { CurrentConditions, HourlyForecast, ToolStream } from '@/lib/weather/schemas';
 
 export interface CurrentWeatherData {
@@ -17,32 +18,35 @@ export interface CurrentWeatherData {
 export async function* resolveCurrentWeather(
   city: string,
 ): AsyncGenerator<ToolStream<CurrentWeatherData>> {
-  yield { status: 'resolving', query: city };
+  const safe = (value: ToolStream<CurrentWeatherData>) =>
+    safeToolStreamYield(currentWeatherStreamSchema, value, city);
+
+  yield safe({ status: 'resolving', query: city });
 
   const geocoded = await geocodeCity(city);
   if (!geocoded.ok) {
-    yield { status: 'failed', query: city, reason: geocoded.reason };
+    yield safe({ status: 'failed', query: city, reason: geocoded.reason });
     return;
   }
 
   if (hasAmbiguousMatch(geocoded.data)) {
-    yield { status: 'ambiguous', query: city, candidates: geocoded.data };
+    yield safe({ status: 'ambiguous', query: city, candidates: geocoded.data });
     return;
   }
 
   const [location] = geocoded.data;
-  yield { status: 'located', location };
+  yield safe({ status: 'located', location });
 
   const forecast = await fetchForecast(location);
   if (!forecast.ok) {
-    yield { status: 'failed', query: city, reason: forecast.reason };
+    yield safe({ status: 'failed', query: city, reason: forecast.reason });
     return;
   }
 
   const { current, hourly } = forecast.data;
-  yield {
+  yield safe({
     status: 'ready',
     location,
     data: { conditions: current, hourly, insight: buildInsight({ conditions: current, hourly }) },
-  };
+  });
 }

@@ -114,3 +114,44 @@ export type ToolStream<T> =
   | { status: 'located'; location: Location }
   | { status: 'ready'; location: Location; data: T }
   | { status: 'failed'; query: string; reason: FailureReason };
+
+export const failureReasonSchema = z.enum(['not_found', 'invalid_response', 'timeout', 'upstream_error']);
+
+/** Runtime counterpart of `ToolStream<T>`, parameterized on the `ready` branch's `data` shape. */
+export function toolStreamSchema<T extends z.ZodTypeAny>(dataSchema: T) {
+  return z.discriminatedUnion('status', [
+    z.object({ status: z.literal('resolving'), query: z.string() }),
+    z.object({ status: z.literal('ambiguous'), query: z.string(), candidates: z.array(locationSchema) }),
+    z.object({ status: z.literal('located'), location: locationSchema }),
+    z.object({ status: z.literal('ready'), location: locationSchema, data: dataSchema }),
+    z.object({ status: z.literal('failed'), query: z.string(), reason: failureReasonSchema }),
+  ]);
+}
+
+export const currentWeatherDataSchema = z.object({
+  conditions: currentConditionsSchema,
+  hourly: hourlyForecastSchema,
+  insight: z.string(),
+});
+
+export const hourlyForecastDataSchema = z.object({
+  metric: hourlyMetricSchema,
+  hourly: hourlyForecastSchema,
+});
+
+export const currentWeatherStreamSchema = toolStreamSchema(currentWeatherDataSchema);
+export const hourlyForecastStreamSchema = toolStreamSchema(hourlyForecastDataSchema);
+
+/**
+ * Validates a yielded `ToolStream` value against its schema before it's sent
+ * to the client; a malformed value degrades to `failed`/`invalid_response`
+ * instead of forwarding data the widget layer can't safely render.
+ */
+export function safeToolStreamYield<T>(
+  schema: z.ZodTypeAny,
+  value: ToolStream<T>,
+  query: string,
+): ToolStream<T> {
+  const parsed = schema.safeParse(value);
+  return parsed.success ? (parsed.data as ToolStream<T>) : { status: 'failed', query, reason: 'invalid_response' };
+}
