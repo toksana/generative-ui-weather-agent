@@ -1,7 +1,18 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  type TooltipContentProps,
+} from 'recharts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { HourlyForecastData } from '@/lib/ai/tools/resolve-hourly-forecast';
@@ -44,6 +55,26 @@ interface ChartPoint {
   value: number;
 }
 
+function ChartTooltipContent({
+  active,
+  payload,
+  label,
+  unit,
+  title,
+}: Partial<TooltipContentProps<number, string>> & { unit: string; title: string }) {
+  if (!active || !payload || payload.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-2.5 text-sm shadow-md">
+      <p className="text-muted-foreground">{label}</p>
+      <p className="font-mono font-medium text-foreground">
+        {title}: {payload[0]?.value}
+        {unit}
+      </p>
+    </div>
+  );
+}
+
 function toChartData({ metric, hourly }: HourlyForecastData): ChartPoint[] {
   const values = metric === 'temperature' ? hourly.temperature : hourly.precipitationProbability;
   return hourly.time.map((time, index) => ({
@@ -74,7 +105,7 @@ function HourlyChartWidgetBase({ location, data }: HourlyChartWidgetProps) {
                 <CartesianGrid vertical={false} stroke="var(--color-border)" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} unit={unit} width={40} />
-                <Tooltip formatter={(value) => [`${value}${unit}`, title]} />
+                <Tooltip content={<ChartTooltipContent unit={unit} title={title} />} />
                 <Line type="monotone" dataKey="value" stroke="var(--color-chart-1)" strokeWidth={2} dot={false} />
               </LineChart>
             ) : (
@@ -90,7 +121,7 @@ function HourlyChartWidgetBase({ location, data }: HourlyChartWidgetProps) {
                   domain={[0, 100]}
                   ticks={[0, 25, 50, 75, 100]}
                 />
-                <Tooltip formatter={(value) => [`${value}${unit}`, title]} />
+                <Tooltip content={<ChartTooltipContent unit={unit} title={title} />} />
                 <Bar dataKey="value" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} />
               </BarChart>
             )}
