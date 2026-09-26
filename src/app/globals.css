@@ -23,6 +23,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-compare-4: var(--compare-4);
+  --color-compare-3: var(--compare-3);
+  --color-compare-2: var(--compare-2);
+  --color-compare-1: var(--compare-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -84,6 +88,12 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  /* Categorical city-identity palette for multi-city comparisons — validated with the
+     dataviz skill's validate_palette.js (adjacent pairlist) against this app's card surface. */
+  --compare-1: #2a78d6;
+  --compare-2: #eb6834;
+  --compare-3: #1baf7a;
+  --compare-4: #eda100;
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -125,6 +135,10 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  --compare-1: #3987e5;
+  --compare-2: #d95926;
+  --compare-3: #199e70;
+  --compare-4: #c98500;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);

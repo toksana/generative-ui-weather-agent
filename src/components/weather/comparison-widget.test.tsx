@@ -1,32 +1,47 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import type { ComparedCityUpdate } from '@/lib/ai/tools/compare-cities';
+import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather';
+import type { ToolStream } from '@/lib/weather/schemas';
+
 import { ComparisonWidget } from './comparison-widget';
 
+function readyUpdate(city: string, locationName: string, temperature: number): ComparedCityUpdate {
+  const data: CurrentWeatherData = {
+    conditions: {
+      temperature,
+      apparentTemperature: temperature,
+      relativeHumidity: 50,
+      precipitation: 0,
+      weatherCode: 0,
+      windSpeed: 10,
+      isDay: true,
+    },
+    hourly: {
+      time: Array.from({ length: 24 }, (_, i) => `2026-09-26T${String(i).padStart(2, '0')}:00`),
+      temperature: Array.from({ length: 24 }, () => temperature),
+      precipitationProbability: Array.from({ length: 24 }, () => 0),
+      precipitation: Array.from({ length: 24 }, () => 0),
+    },
+    insight: `${locationName} insight`,
+  };
+  const result: ToolStream<CurrentWeatherData> = {
+    status: 'ready',
+    location: {
+      name: locationName,
+      country: 'Testland',
+      latitude: 0,
+      longitude: 0,
+      timezone: 'UTC',
+    },
+    data,
+  };
+  return { city, result };
+}
+
 describe('ComparisonWidget', () => {
-  it('lays out as a wrapping grid for fewer than 3 cities', () => {
-    // Arrange & Act
-    const { container } = render(<ComparisonWidget toolCallId="call-1" cities={['Tokyo', 'Osaka']} />);
-
-    // Assert
-    const grid = container.firstElementChild;
-    expect(grid).toHaveClass('grid');
-    expect(grid).not.toHaveClass('overflow-x-auto');
-  });
-
-  it('stays a wrapping grid (never a horizontal scroll strip) at 3 or more cities', () => {
-    // Arrange & Act
-    const { container } = render(
-      <ComparisonWidget toolCallId="call-1" cities={['Tokyo', 'Osaka', 'Kyoto']} />,
-    );
-
-    // Assert
-    const grid = container.firstElementChild;
-    expect(grid).toHaveClass('grid');
-    expect(grid).not.toHaveClass('overflow-x-auto', 'snap-x');
-  });
-
-  it('renders a skeleton frame per city before any update arrives', () => {
+  it('renders a skeleton row per city before any update arrives', () => {
     // Arrange & Act
     render(<ComparisonWidget toolCallId="call-1" cities={['Tokyo', 'Osaka', 'Kyoto']} />);
 
@@ -36,7 +51,7 @@ describe('ComparisonWidget', () => {
     expect(screen.getByText('Finding Kyoto…')).toBeInTheDocument();
   });
 
-  it('renders a failure card with no crash when a city fails to resolve', () => {
+  it('renders a failure row with no crash when a city fails to resolve', () => {
     // Arrange & Act
     render(
       <ComparisonWidget
@@ -49,5 +64,44 @@ describe('ComparisonWidget', () => {
     // Assert
     expect(screen.getByText('Couldn\'t get the weather for "Nowhereville".')).toBeInTheDocument();
     expect(screen.getByText('Finding Tokyo…')).toBeInTheDocument();
+  });
+
+  it('renders a resolved city with its name, temperature, and low/high range', () => {
+    // Arrange & Act
+    render(
+      <ComparisonWidget
+        toolCallId="call-1"
+        cities={['Tokyo', 'Osaka']}
+        update={readyUpdate('Tokyo', 'Tokyo', 22)}
+      />,
+    );
+
+    // Assert
+    expect(screen.getByText('Tokyo')).toBeInTheDocument();
+    expect(screen.getByText('22°')).toBeInTheDocument();
+    expect(screen.getByText('22° / 22°')).toBeInTheDocument();
+    expect(screen.getByText('Finding Osaka…')).toBeInTheDocument();
+  });
+
+  it('keeps a stable row order (input order) regardless of which city resolves first', () => {
+    // Arrange & Act
+    const { rerender } = render(
+      <ComparisonWidget
+        toolCallId="call-1"
+        cities={['Tokyo', 'Osaka']}
+        update={readyUpdate('Osaka', 'Osaka', 18)}
+      />,
+    );
+    rerender(
+      <ComparisonWidget
+        toolCallId="call-1"
+        cities={['Tokyo', 'Osaka']}
+        update={readyUpdate('Osaka', 'Osaka', 18)}
+      />,
+    );
+
+    // Assert
+    const rows = screen.getAllByText(/Finding Tokyo…|Osaka/);
+    expect(rows[0]).toHaveTextContent('Finding Tokyo…');
   });
 });

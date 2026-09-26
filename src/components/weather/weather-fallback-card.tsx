@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import type { FailureReason } from '@/lib/types';
 
-const REASON_COPY: Record<FailureReason, string> = {
+export const REASON_COPY: Record<FailureReason, string> = {
   not_found: "We couldn't find that place.",
   invalid_response: 'The weather service sent back something we could not read.',
   timeout: 'The weather service took too long to respond.',

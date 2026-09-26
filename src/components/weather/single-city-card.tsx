@@ -1,36 +1,22 @@
-import type { VariantProps } from 'class-variance-authority';
 import { ArrowDown, ArrowUp, CloudRain, Droplets, Wind as WindIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ReactNode } from 'react';
 
-import { Badge, type badgeVariants } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather';
 import { localTime } from '@/lib/time';
 import { assertNever } from '@/lib/utils';
 import type { Location, ToolStream } from '@/lib/weather/schemas';
-import { describeWeatherCode, type WeatherSeverity } from '@/lib/weather/wmo';
+import { describeWeatherCode } from '@/lib/weather/wmo';
 
 import { AnimatedNumber } from './animated-number';
 import { MetricSkeleton } from './metric-skeleton';
 import { StatCard } from './stat-card';
 import { WeatherFallbackCard } from './weather-fallback-card';
 import { WeatherIcon } from './weather-icon';
+import { SEVERITY_BADGE_VARIANT, temperatureRange } from './weather-format';
 import { WidgetErrorBoundary } from './widget-error-boundary';
-
-const SEVERITY_BADGE_VARIANT: Record<WeatherSeverity, NonNullable<VariantProps<typeof badgeVariants>['variant']>> = {
-  calm: 'default',
-  mild: 'info',
-  notable: 'warning',
-  severe: 'destructive',
-};
-
-/** Today's low/high, derived from the already-fetched hourly forecast (first 24h ≈ local today). */
-function temperatureRange(hourlyTemperature: number[]): { low: number; high: number } | undefined {
-  const today = hourlyTemperature.slice(0, 24);
-  if (today.length === 0) return undefined;
-  return { low: Math.min(...today), high: Math.max(...today) };
-}
 
 function LocationHeader({ location, badge }: { location: Location; badge?: ReactNode }) {
   return (
