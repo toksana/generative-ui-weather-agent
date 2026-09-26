@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import type { GuardReason } from '@/lib/types';
 
 const MESSAGE: Record<GuardReason, string> = {
+  invalid_request: 'That request could not be read — please try sending your message again.',
   input_too_long: 'That message is too long — keep it under 500 characters.',
   too_many_turns: "This conversation has gotten long — start a new one to keep chatting.",
   rate_limited: "You've hit the limit for this demo — try again tomorrow.",

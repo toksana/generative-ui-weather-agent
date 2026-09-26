@@ -10,6 +10,7 @@ import {
   toUIMessageStream,
 } from 'ai';
 import { after } from 'next/server';
+import { z } from 'zod';
 
 import { langfuseSpanProcessor } from '@/instrumentation';
 import { getModel } from '@/lib/ai/provider';
@@ -25,6 +26,14 @@ export const maxDuration = 30;
 const MAX_OUTPUT_TOKENS = 1024;
 const MAX_INPUT_LENGTH = 500;
 const MAX_TURNS = 20;
+
+// Validates only the envelope this handler reads (not a full mirror of the AI
+// SDK's `UIMessage` part union — that's the SDK's contract, not ours to
+// duplicate). `convertToModelMessages` still handles the deep shape.
+const chatRequestSchema = z.object({
+  id: z.string().optional(),
+  messages: z.array(z.object({ id: z.string().optional(), role: z.string(), parts: z.array(z.unknown()) })),
+});
 
 function latestUserText(messages: ChatMessage[]): string {
   const last = messages.at(-1);
@@ -47,8 +56,21 @@ function guardResponse(reason: GuardReason, status: number): Response {
   return Response.json({ reason }, { status });
 }
 
-async function handler(request: Request): Promise<Response> {
-  const { messages, id }: { messages: ChatMessage[]; id?: string } = await request.json();
+export async function handler(request: Request): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return guardResponse('invalid_request', 400);
+  }
+
+  const parsedBody = chatRequestSchema.safeParse(body);
+  if (!parsedBody.success) {
+    return guardResponse('invalid_request', 400);
+  }
+
+  const messages = parsedBody.data.messages as ChatMessage[];
+  const { id } = parsedBody.data;
   const userId = clientIdentifier(request);
 
   return propagateAttributes({ traceName: 'handle-chat-message', sessionId: id, userId }, async () => {
