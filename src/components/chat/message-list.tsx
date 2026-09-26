@@ -36,7 +36,7 @@ export function MessageList({ messages, onSuggestedPrompt }: MessageListProps) {
     >
       {messages.map((message) => (
         <div key={message.id} className={cn('flex', message.role === 'user' && 'justify-end')}>
-          <div className="flex max-w-full flex-col gap-2">
+          <div className={cn('flex max-w-full flex-col gap-2', message.role === 'assistant' && 'w-full')}>
             {message.parts.map((part, index) => (
               <MessagePart key={partKey(part, index)} part={part} onSuggestedPrompt={onSuggestedPrompt} />
             ))}

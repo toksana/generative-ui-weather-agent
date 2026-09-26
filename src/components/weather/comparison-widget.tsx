@@ -173,8 +173,13 @@ function CompareRow({
 
   return (
     <WidgetErrorBoundary query={city}>
-      <AnimatePresence mode="popLayout">
-        <motion.div key={result?.status ?? 'pending'} layout>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={result?.status ?? 'pending'}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
           {(() => {
             if (!result || result.status === 'resolving' || result.status === 'located') {
               const label = result?.status === 'located' ? result.location.name : city;

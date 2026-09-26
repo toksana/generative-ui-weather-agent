@@ -19,7 +19,7 @@ interface FrameProps {
 
 function Frame({ city, location }: FrameProps) {
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader>
         {location ? (
           <CardTitle>{location.name}</CardTitle>
@@ -59,7 +59,7 @@ function HourlyChartWidgetBase({ location, data }: HourlyChartWidgetProps) {
   const title = isTemperature ? 'Hourly temperature' : 'Chance of rain';
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>
           {title}
@@ -120,11 +120,11 @@ function streamQuery(stream: ToolStream<HourlyForecastData>): string | undefined
   }
 }
 
-function Stream({ toolCallId, stream, onSuggestedPrompt }: StreamProps) {
+function Stream({ stream, onSuggestedPrompt }: StreamProps) {
   return (
     <WidgetErrorBoundary query={streamQuery(stream)}>
-      <AnimatePresence mode="popLayout">
-        <motion.div key={stream.status} layout layoutId={`hourly-chart-${toolCallId}`}>
+      <AnimatePresence mode="wait">
+        <motion.div key={stream.status} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           {(() => {
             switch (stream.status) {
               case 'resolving':

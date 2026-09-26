@@ -45,7 +45,7 @@ interface FrameProps {
 
 function Frame({ city, location, pending }: FrameProps) {
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       {location ? (
         <LocationHeader location={location} />
       ) : (
@@ -82,7 +82,7 @@ function SingleCityCardBase({ location, data }: SingleCityCardProps) {
   const range = temperatureRange(data.hourly.temperature);
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <LocationHeader
         location={location}
         badge={
@@ -161,11 +161,11 @@ function streamQuery(stream: ToolStream<CurrentWeatherData>): string | undefined
   }
 }
 
-function Stream({ toolCallId, stream, onSuggestedPrompt }: StreamProps) {
+function Stream({ stream, onSuggestedPrompt }: StreamProps) {
   return (
     <WidgetErrorBoundary query={streamQuery(stream)}>
-      <AnimatePresence mode="popLayout">
-        <motion.div key={stream.status} layout layoutId={`weather-card-${toolCallId}`}>
+      <AnimatePresence mode="wait">
+        <motion.div key={stream.status} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           {(() => {
             switch (stream.status) {
               case 'resolving':
