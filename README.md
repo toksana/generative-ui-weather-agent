@@ -4,6 +4,8 @@ A Generative UI weather assistant: you ask a question in plain language, Claude 
 
 Tool calling, structured output validation, streaming UI, rate limiting, observability, and a graded eval suite. Full architecture and phase-by-phase plan: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
+![Demo: asking for Tokyo's current weather, then comparing London, Paris, and Berlin](./docs/demo.gif)
+
 ## Status
 
 🚧 Under active development. Current state (see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full phase-by-phase plan):
