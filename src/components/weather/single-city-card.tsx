@@ -1,17 +1,19 @@
 import type { VariantProps } from 'class-variance-authority';
+import { ArrowDown, ArrowUp, CloudRain, Droplets, Wind as WindIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ReactNode } from 'react';
 
 import { Badge, type badgeVariants } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CurrentWeatherData } from '@/lib/ai/tools/resolve-current-weather';
 import { localTime } from '@/lib/time';
-import { assertNever, cn } from '@/lib/utils';
+import { assertNever } from '@/lib/utils';
 import type { Location, ToolStream } from '@/lib/weather/schemas';
 import { describeWeatherCode, type WeatherSeverity } from '@/lib/weather/wmo';
 
 import { AnimatedNumber } from './animated-number';
 import { MetricSkeleton } from './metric-skeleton';
+import { StatCard } from './stat-card';
 import { WeatherFallbackCard } from './weather-fallback-card';
 import { WeatherIcon } from './weather-icon';
 import { WidgetErrorBoundary } from './widget-error-boundary';
@@ -23,26 +25,28 @@ const SEVERITY_BADGE_VARIANT: Record<WeatherSeverity, NonNullable<VariantProps<t
   severe: 'destructive',
 };
 
-function Metric({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
-  return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={cn('text-foreground', className)}>{value}</dd>
-    </div>
-  );
+/** Today's low/high, derived from the already-fetched hourly forecast (first 24h ≈ local today). */
+function temperatureRange(hourlyTemperature: number[]): { low: number; high: number } | undefined {
+  const today = hourlyTemperature.slice(0, 24);
+  if (today.length === 0) return undefined;
+  return { low: Math.min(...today), high: Math.max(...today) };
 }
 
-function LocationHeader({ location }: { location: Location }) {
+function LocationHeader({ location, badge }: { location: Location; badge?: ReactNode }) {
   return (
-    <CardHeader className="flex-row items-baseline justify-between gap-2 space-y-0">
-      <CardTitle>
-        {location.name}
-        <span className="ml-1 font-normal text-muted-foreground">
-          {location.admin1 ? `${location.admin1}, ` : ''}
-          {location.country}
-        </span>
-      </CardTitle>
-      <span className="shrink-0 text-base text-muted-foreground md:text-lg">{localTime(location.timezone)}</span>
+    <CardHeader>
+      <div className="min-w-0">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Current conditions</p>
+        <CardTitle className="mt-0.5 truncate text-xl font-semibold">
+          {location.name}
+          <span className="ml-1 font-normal text-muted-foreground">
+            {location.admin1 ? `${location.admin1}, ` : ''}
+            {location.country}
+          </span>
+        </CardTitle>
+        <p className="mt-1 text-sm text-muted-foreground">{localTime(location.timezone)}</p>
+      </div>
+      {badge && <CardAction>{badge}</CardAction>}
     </CardHeader>
   );
 }
@@ -60,14 +64,25 @@ function Frame({ city, location, pending }: FrameProps) {
         <LocationHeader location={location} />
       ) : (
         <CardHeader>
-          <MetricSkeleton className="h-5 w-40" />
-          {city && <p className="text-base text-muted-foreground md:text-lg">Finding {city}…</p>}
+          <div className="min-w-0 space-y-1.5">
+            <MetricSkeleton className="h-3 w-28" />
+            <MetricSkeleton className="h-5 w-40" />
+            {city && <p className="text-sm text-muted-foreground">Finding {city}…</p>}
+          </div>
         </CardHeader>
       )}
       {(!location || pending) && (
-        <CardContent className="flex items-center gap-3">
-          <MetricSkeleton className="h-10 w-10 rounded-full" />
-          <MetricSkeleton className="h-9 w-16" />
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <MetricSkeleton className="h-14 w-32" />
+            <MetricSkeleton className="h-4 w-24" />
+          </div>
+          <div className="border-t border-border" />
+          <div className="grid grid-cols-3 gap-2">
+            <MetricSkeleton className="h-16 rounded-lg" />
+            <MetricSkeleton className="h-16 rounded-lg" />
+            <MetricSkeleton className="h-16 rounded-lg" />
+          </div>
         </CardContent>
       )}
     </Card>
@@ -78,30 +93,64 @@ type SingleCityCardProps = Extract<ToolStream<CurrentWeatherData>, { status: 're
 
 function SingleCityCardBase({ location, data }: SingleCityCardProps) {
   const condition = describeWeatherCode(data.conditions.weatherCode);
+  const range = temperatureRange(data.hourly.temperature);
 
   return (
     <Card className="w-full max-w-md">
-      <LocationHeader location={location} />
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-3">
-          <WeatherIcon icon={condition.icon} className="text-4xl" />
-          <AnimatedNumber
-            value={data.conditions.temperature}
-            suffix="°"
-            className="text-4xl font-semibold text-foreground"
-          />
-          <Badge variant={SEVERITY_BADGE_VARIANT[condition.severity]}>{condition.label}</Badge>
+      <LocationHeader
+        location={location}
+        badge={
+          <Badge variant={SEVERITY_BADGE_VARIANT[condition.severity]}>
+            <WeatherIcon icon={condition.icon} />
+            {condition.label}
+          </Badge>
+        }
+      />
+      <CardContent className="space-y-4">
+        <div>
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <AnimatedNumber
+              value={data.conditions.temperature}
+              suffix="°"
+              className="font-mono text-6xl font-semibold tracking-tight text-foreground md:text-7xl"
+            />
+            <span className="text-sm text-muted-foreground">
+              Feels like <AnimatedNumber value={data.conditions.apparentTemperature} suffix="°C" />
+            </span>
+          </div>
+          {range && (
+            <div className="mt-1 flex items-center gap-3 text-sm font-semibold text-info [&_svg]:size-3.5">
+              <span className="inline-flex items-center gap-1">
+                <ArrowDown aria-hidden="true" />
+                {Math.round(range.low)}°
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <ArrowUp aria-hidden="true" />
+                {Math.round(range.high)}°
+              </span>
+            </div>
+          )}
         </div>
-        <p className="text-base text-foreground/80 md:text-lg">{data.insight}</p>
-        <dl className="grid grid-cols-3 gap-2 text-base md:text-lg">
-          <Metric label="Feels like" value={<AnimatedNumber value={data.conditions.apparentTemperature} suffix="°" />} />
-          <Metric
+        <p className="text-sm text-foreground/80">{data.insight}</p>
+        <div className="border-t border-border" />
+        <div className="grid grid-cols-3 gap-2">
+          <StatCard
+            icon={Droplets}
             label="Humidity"
             value={<AnimatedNumber value={data.conditions.relativeHumidity} suffix="%" />}
-            className="font-medium text-info"
+            progress={{ value: data.conditions.relativeHumidity }}
           />
-          <Metric label="Wind" value={<AnimatedNumber value={data.conditions.windSpeed} suffix=" km/h" />} />
-        </dl>
+          <StatCard
+            icon={WindIcon}
+            label="Wind"
+            value={<AnimatedNumber value={data.conditions.windSpeed} suffix=" km/h" />}
+          />
+          <StatCard
+            icon={CloudRain}
+            label="Precip"
+            value={<AnimatedNumber value={data.conditions.precipitation} decimals={1} suffix=" mm" />}
+          />
+        </div>
       </CardContent>
     </Card>
   );
