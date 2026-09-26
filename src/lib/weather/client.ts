@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { DEFAULT_OPEN_METEO_BASE_URL, DEFAULT_OPEN_METEO_GEOCODING_BASE_URL } from '@/config/constants';
+
 import { CACHE_TTL_SECONDS, forecastCacheKey, geoCacheKey, getCached, setCached } from '../cache/weather-cache';
 import { recordCacheResult } from '../telemetry';
 import type { Result } from '../types';
@@ -21,11 +23,11 @@ const GEOCODING_REVALIDATE_SECONDS = 60 * 60 * 24;
 const FORECAST_REVALIDATE_SECONDS = 60 * 5;
 
 function geocodingBaseUrl(): string {
-  return process.env.OPEN_METEO_GEOCODING_BASE_URL ?? 'https://geocoding-api.open-meteo.com';
+  return process.env.OPEN_METEO_GEOCODING_BASE_URL ?? DEFAULT_OPEN_METEO_GEOCODING_BASE_URL;
 }
 
 function forecastBaseUrl(): string {
-  return process.env.OPEN_METEO_BASE_URL ?? 'https://api.open-meteo.com';
+  return process.env.OPEN_METEO_BASE_URL ?? DEFAULT_OPEN_METEO_BASE_URL;
 }
 
 // Raw Open-Meteo geocoding response shape — snake_case, mapped to `Location`

@@ -1,10 +1,21 @@
+import type { Duration } from '@upstash/ratelimit';
 import { Ratelimit } from '@upstash/ratelimit';
+
+import { DEFAULT_RATE_LIMIT_MAX, DEFAULT_RATE_LIMIT_WINDOW_MS } from '@/config/constants';
 
 import { getRedis } from './cache/redis';
 
-const LIMIT = 5;
-const WINDOW = '1 d';
-const WINDOW_MS = 24 * 60 * 60 * 1000;
+function rateLimitMax(): number {
+  const raw = process.env.RATE_LIMIT_MAX;
+  const parsed = raw ? Number(raw) : DEFAULT_RATE_LIMIT_MAX;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_RATE_LIMIT_MAX;
+}
+
+function rateLimitWindowMs(): number {
+  const raw = process.env.RATE_LIMIT_WINDOW_MS;
+  const parsed = raw ? Number(raw) : DEFAULT_RATE_LIMIT_WINDOW_MS;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_RATE_LIMIT_WINDOW_MS;
+}
 
 let ratelimit: Ratelimit | null | undefined;
 
@@ -13,7 +24,11 @@ function getRatelimit(): Ratelimit | null {
 
   const redis = getRedis();
   ratelimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMIT, WINDOW), prefix: 'wx:v1:ratelimit' })
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(rateLimitMax(), `${rateLimitWindowMs()} ms` as Duration),
+        prefix: 'wx:v1:ratelimit',
+      })
     : null;
   return ratelimit;
 }
@@ -24,9 +39,11 @@ const memoryHits = new Map<string, number[]>();
 
 function checkMemoryLimit(key: string): boolean {
   const now = Date.now();
-  const hits = (memoryHits.get(key) ?? []).filter((hit) => now - hit < WINDOW_MS);
+  const windowMs = rateLimitWindowMs();
+  const limit = rateLimitMax();
+  const hits = (memoryHits.get(key) ?? []).filter((hit) => now - hit < windowMs);
 
-  if (hits.length >= LIMIT) {
+  if (hits.length >= limit) {
     memoryHits.set(key, hits);
     return false;
   }

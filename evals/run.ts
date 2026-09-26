@@ -1,6 +1,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { generateText, stepCountIs } from 'ai';
 
+import { DEFAULT_MODEL_ID, ESCALATION_MODEL_ID } from '@/config/constants';
 import { SYSTEM_PROMPT } from '@/lib/ai/system-prompt';
 import { weatherTools } from '@/lib/ai/tools';
 
@@ -16,7 +17,7 @@ try {
   // No .env.local (e.g. CI providing ANTHROPIC_API_KEY directly) — fine.
 }
 
-const MODEL_IDS = ['claude-haiku-4-5', 'claude-sonnet-5'] as const;
+const MODEL_IDS = [DEFAULT_MODEL_ID, ESCALATION_MODEL_ID] as const;
 
 // Same description/inputSchema as the real tools, `execute` omitted so
 // `generateText` returns the raw tool call to grade instead of hitting
